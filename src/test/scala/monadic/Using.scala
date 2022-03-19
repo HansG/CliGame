@@ -27,7 +27,7 @@ object TestUsing extends App {
     }
   }}
 
-  val passwdFile = readTextFileWithTry("/etc/passwd")
+  val passwdFile = tryUsingRead("/etc/passwd")
   passwdFile match {
     case Success(lines) => lines.foreach(println)
     case Failure(s) => println(s"Failed, message is: $s")
