@@ -1,30 +1,43 @@
 package types
 
 object MyRefine1 {
-  import scala.compiletime.ops.int.*
+  import scala.compiletime.*
   import scala.compiletime.ops.boolean.*
+  import scala.compiletime.ops.int.*
 
-  trait Validated[PredRes <: Boolean]
-  given Validated[true] = new Validated[true] {}
+  type PredFun = [V <: Int] =>> Boolean
+  trait Fun
+  class PFun[E[_] <: PredFun[_]] extends Fun
+   type LT10   = [V <: Int] =>> V < 10
+   new PFun[LT10]{}
+  trait Validated[E[_] <: PredFun[_]]
+/*  val v = new Validated[LT10]{}
+Type argument types.MyRefine1.LT10 does not conform to upper bound [_] =>> Boolean
+  val v = new Validated[LT10]{}
+ */
 
-  trait RefinedInt[Predicate[_ <: Int] <: Boolean]
-  def validate[V <: Int, Predicate[_ <: Int] <: Boolean](using Validated[Predicate[V]]): RefinedInt[Predicate] = new RefinedInt {}
-  def validate1[V <: Int, Predicate[_ <: Int] <: Boolean](using Validated[Predicate[V]])  = true
-  def id[V <: Int](using Validated[V < 10])(v:V): V = v
+  // given Validated[true] = new Validated[true] {}
+  implicit inline def mkVal[V <: Int & Singleton, E[_] <: PredFun[_]](v: V): Validated[E] =
+    inline erasedValue[E[V]] match
+      case _: true =>
+         new Validated[E] {}
+      case _: false =>
+        inline val vs    = constValue[ToString[V]]
+        inline val limit = -1 //ToString[E]
+        error("Validation failed: " + vs + " < " + limit)
 
-  id[5](5)
-  validate1[7, [V <: Int] =>> V > 5 && V < 10]
-  validate1[11, [V <: Int] =>> V > 5 && V < 10]
+  // val idv : Validated[LT10] = 9
+
+  /*
+  type PF[_ <: Int] <: Boolean
+  trait Valid[E <: PF[_]]
+  type L10[V <: Int] = V < 10
+  val v1 = new Valid[L10[5]]{}
+*/
 
 
 
-  val lowerThan10: RefinedInt[[V <: Int] =>> V < 10] = validate[4, [V <: Int] =>> V < 10]
-  type LowerThan10[V <: Int] = V < 10
-  val lowerThan10x = validate[4, LowerThan10]
-  val lowerThan102 = validate1[4, LowerThan10]
-  val lowerThan9 = validate[7, LowerThan10]
-  val nlowerThan10 = validate[7, LowerThan10]
-  val lowerThan10a = validate[-4, LowerThan10]
+ // idv(5)
 
 
 
